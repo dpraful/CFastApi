@@ -54,19 +54,13 @@ API_KEY_CODE = get_env("API_KEY_CODE")
 # ==========================================================
 
 HOST = get_env("HOST")
-
 PORT = int(get_env("PORT"))
-
 GETPORT = int(get_env("GETPORT"))
-
 POSTPORT = int(get_env("POSTPORT"))
+MGETPORT = int(os.getenv("MGETPORT"))
+MPOSTPORT = int(os.getenv("MPOSTPORT"))
+WSCHATPORT = int(get_env("WSCHATPORT"))
 
-MGETPORT = int(
-    os.getenv("MGETPORT", "8003")
-)
-MPOSTPORT = int(
-    os.getenv("MPOSTPORT", "8004")
-)
 
 MEDIAPATH = os.getenv(
     "MEDIAPATH",

@@ -1,58 +1,92 @@
-import requests
-import os
+import asyncio
+import json
+import websockets
 
 
 # ==========================================================
-# CONFIGURATION
+# USER 1
 # ==========================================================
 
-URL = "http://127.0.0.1:8004/commonmpost"
+async def user1():
 
-FILE_PATH = r"C:\Users\PRAFUL\Pictures\consultant.jpg"
+    url = "ws://127.0.0.1:8005/ws/chat/101"
+
+    async with websockets.connect(url) as websocket:
+
+        print("User 101 connected")
+
+        # --------------------------------------------------
+        # Send message to User 102
+        # --------------------------------------------------
+
+        await websocket.send(json.dumps({
+            "receiver_id": "102",
+            "message": "Hello User 102!"
+        }))
+
+        print("User 101 sent message")
+
+        # --------------------------------------------------
+        # Receive response
+        # --------------------------------------------------
+
+        response = await websocket.recv()
+
+        print("User 101 received:")
+        print(response)
 
 
 # ==========================================================
-# CHECK FILE
+# USER 2
 # ==========================================================
 
-if not os.path.isfile(FILE_PATH):
+async def user2():
 
-    print("File not found:")
-    print(FILE_PATH)
-    exit()
+    url = "ws://127.0.0.1:8005/ws/chat/102"
+
+    async with websockets.connect(url) as websocket:
+
+        print("User 102 connected")
+
+        # --------------------------------------------------
+        # Wait for message
+        # --------------------------------------------------
+
+        response = await websocket.recv()
+
+        print("User 102 received:")
+        print(response)
 
 
 # ==========================================================
-# UPLOAD FILE
+# MAIN
 # ==========================================================
 
-try:
+async def main():
 
-    with open(FILE_PATH, "rb") as file:
+    # Connect User 102 first
+    user2_task = asyncio.create_task(
+        user2()
+    )
 
-        files = {
-            "file": (
-                os.path.basename(FILE_PATH),
-                file
-            )
-        }
+    # Give User 102 time to connect
+    await asyncio.sleep(1)
 
-        response = requests.post(
-            URL,
-            files=files
-        )
+    # Connect User 101 and send message
+    user1_task = asyncio.create_task(
+        user1()
+    )
 
-
-    # ======================================================
-    # RESPONSE
-    # ======================================================
-
-    print("Status Code:", response.status_code)
-    print("Response:")
-    print(response.text)
+    await asyncio.gather(
+        user1_task,
+        user2_task
+    )
 
 
-except requests.exceptions.RequestException as e:
+# ==========================================================
+# START TEST
+# ==========================================================
 
-    print("Request failed:")
-    print(e)
+if __name__ == "__main__":
+
+    asyncio.run(main())
