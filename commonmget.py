@@ -35,12 +35,16 @@ def api_status():
 def media_get(file_path: str):
 
     # ------------------------------------------------------
+    # Build media root
+    # ------------------------------------------------------
+
+    media_root = os.path.realpath(MEDIAPATH)
+
+    # ------------------------------------------------------
     # Build requested file path
     # ------------------------------------------------------
 
-    media_root = os.path.abspath(MEDIAPATH)
-
-    requested_file = os.path.abspath(
+    requested_file = os.path.realpath(
         os.path.join(media_root, file_path)
     )
 
@@ -88,7 +92,7 @@ def media_get(file_path: str):
     # ------------------------------------------------------
 
     return FileResponse(
-        requested_file,
+        path=requested_file,
         media_type=media_type
     )
 

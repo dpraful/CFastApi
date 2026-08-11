@@ -20,6 +20,7 @@ def root():
 
 def execute_sp(procedure_name: str):
 
+    # Validate stored procedure name
     if not re.fullmatch(r"\w+", procedure_name):
         raise HTTPException(
             status_code=400,
@@ -31,13 +32,36 @@ def execute_sp(procedure_name: str):
 
             cursor = conn.cursor()
 
+            # Execute stored procedure
             cursor.execute(f"EXEC dbo.{procedure_name}")
 
-            row = cursor.fetchone()
+            # FOR JSON PATH can return large JSON in multiple chunks
+            rows = cursor.fetchall()
 
-            data = json.loads(row[0]) if row and row[0] else {
-                "data": []
-            }
+            # Combine all JSON chunks
+            raw_json = "".join(
+                str(row[0])
+                for row in rows
+                if row and row[0]
+            )
+
+            # No data returned
+            if not raw_json:
+                data = {
+                    "data": []
+                }
+
+            else:
+                try:
+                    data = json.loads(raw_json)
+
+                except json.JSONDecodeError as e:
+                    return {
+                        "success": False,
+                        "httpstatus": 500,
+                        "message": f"Invalid JSON returned by stored procedure: {e}",
+                        "data": {}
+                    }
 
             return {
                 "success": True,

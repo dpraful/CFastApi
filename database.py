@@ -39,6 +39,8 @@ CONNECTION_STRING = (
     f"DATABASE={get_env('DB_NAME')};"
     f"UID={get_env('DB_USER')};"
     f"PWD={get_env('DB_PASSWORD')};"
+    f"TrustServerCertificate=yes;"
+    f"Encrypt=yes;"
 )
 
 

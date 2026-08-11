@@ -2,6 +2,7 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from database import HOST, MEDIAPATH, MPOSTPORT
 import os
 import shutil
+import uuid
 
 
 # ==========================================================
@@ -57,12 +58,25 @@ def media_post(
         )
 
         # --------------------------------------------------
-        # Get only filename
-        # Prevent path traversal
+        # Get safe filename
         # --------------------------------------------------
 
-        filename = os.path.basename(
+        original_filename = os.path.basename(
             file.filename
+        )
+
+        # --------------------------------------------------
+        # Generate unique filename
+        # Prevent overwriting existing files
+        # --------------------------------------------------
+
+        extension = os.path.splitext(
+            original_filename
+        )[1].lower()
+
+        filename = (
+            f"{uuid.uuid4().hex}"
+            f"{extension}"
         )
 
         file_path = os.path.join(
@@ -91,7 +105,7 @@ def media_post(
             "message": "Media uploaded successfully",
             "data": {
                 "filename": filename,
-                "path": file_path
+                "originalfilename": original_filename
             }
         }
 
