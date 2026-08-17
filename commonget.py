@@ -29,11 +29,19 @@ def execute_sp(procedure_name: str, args: str = ""):
 
             cursor.execute(sql)
 
-            row = cursor.fetchone()
+            rows = cursor.fetchall()
 
-            data = json.loads(row[0]) if row and row[0] else {
-                "data": []
-            }
+            if not rows:
+                data = {"data": []}
+
+            elif len(rows) == 1:
+                data = json.loads(rows[0][0]) if rows[0][0] else {"data": []}
+
+            else:
+                data = [
+                    json.loads(row[0]) if row[0] else {}
+                    for row in rows
+                ]
 
             return {
                 "success": True,
@@ -43,7 +51,6 @@ def execute_sp(procedure_name: str, args: str = ""):
             }
 
     except pyodbc.Error as e:
-
         message = e.args[1] if len(e.args) > 1 else str(e)
 
         return {
@@ -53,15 +60,12 @@ def execute_sp(procedure_name: str, args: str = ""):
             "data": {}
         }
 
-
 @app.get("/commonget/{procedure}")
 def common_get(procedure: str):
 
-    if "(" in procedure and procedure.endswith(")"):
-        procedure_name = procedure.split("(", 1)[0]
-        args = procedure.split("(", 1)[1][:-1]
-
-        return execute_sp(procedure_name, args)
+    if "(" in procedure:
+        procedure_name, args = procedure.split("(", 1)
+        return execute_sp(procedure_name, args[:-1])
 
     return execute_sp(procedure)
 
