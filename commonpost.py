@@ -5,11 +5,6 @@ import json
 
 app = FastAPI()
 
-
-# ==========================================================
-# ROOT URL
-# ==========================================================
-
 @app.get("/")
 def root():
 
@@ -20,29 +15,16 @@ def root():
         "data": {}
     }
 
-
-# ==========================================================
-# COMMON POST
-# ==========================================================
-
 @app.post("/commonpost")
 def common_post(body: dict = Body(...)):
 
     try:
-
-        # --------------------------------------------------
-        # Convert request body to JSON
-        # --------------------------------------------------
 
         json_data = json.dumps(body)
 
         with get_connection() as conn:
 
             cursor = conn.cursor()
-
-            # --------------------------------------------------
-            # Execute rnsave with SQL OUTPUT variable
-            # --------------------------------------------------
 
             cursor.execute(
                 """
@@ -57,11 +39,6 @@ def common_post(body: dict = Body(...)):
                 json_data
             )
 
-            # --------------------------------------------------
-            # First result set:
-            # JSON returned by the procedure called by rnsave
-            # --------------------------------------------------
-
             rows = cursor.fetchall()
 
             raw_json = "".join(
@@ -69,10 +46,6 @@ def common_post(body: dict = Body(...)):
                 for row in rows
                 if row and row[0] is not None
             )
-
-            # --------------------------------------------------
-            # Move to next result set
-            # --------------------------------------------------
 
             output_code = 0
 
@@ -83,15 +56,7 @@ def common_post(body: dict = Body(...)):
                 if output_row and output_row[0] is not None:
                     output_code = int(output_row[0])
 
-            # --------------------------------------------------
-            # Commit transaction
-            # --------------------------------------------------
-
             conn.commit()
-
-            # --------------------------------------------------
-            # Parse returned JSON
-            # --------------------------------------------------
 
             if raw_json:
 
@@ -111,10 +76,6 @@ def common_post(body: dict = Body(...)):
 
                 data = {}
 
-            # --------------------------------------------------
-            # Output code handling
-            # --------------------------------------------------
-
             if output_code != 0:
 
                 return {
@@ -125,10 +86,6 @@ def common_post(body: dict = Body(...)):
                     "outputcode": output_code
                 }
 
-            # --------------------------------------------------
-            # Success
-            # --------------------------------------------------
-
             return {
                 "success": True,
                 "httpstatus": 200,
@@ -138,25 +95,12 @@ def common_post(body: dict = Body(...)):
 
     except pyodbc.Error as e:
 
-        message = e.args[1] if len(e.args) > 1 else str(e)
-
-        if "]" in message:
-            message = message.split("]")[-1].strip()
-
-        if ". (" in message:
-            message = message.split(". (")[0] + "."
-
         return {
             "success": False,
             "httpstatus": 500,
-            "message": message,
+            "message": str(e),
             "data": {}
         }
-
-
-# ==========================================================
-# START SERVER
-# ==========================================================
 
 if __name__ == "__main__":
 
