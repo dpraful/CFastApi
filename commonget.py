@@ -1,9 +1,10 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from database import get_connection, HOST, GETPORT
 import pyodbc
 import json
 
 app = FastAPI()
+
 
 @app.get("/")
 def root():
@@ -14,16 +15,20 @@ def root():
         "data": {}
     }
 
-def execute_sp(procedure: str):
+
+def execute_sp(procedure_name: str):
 
     try:
         with get_connection() as conn:
-
             cursor = conn.cursor()
-            cursor.execute(f"EXEC dbo.{procedure}")
 
-            rows = cursor.fetchall()
-            data = json.loads(rows[0][0]) if rows else { }
+            cursor.execute(f"EXEC dbo.{procedure_name}")
+
+            row = cursor.fetchone()
+
+            data = json.loads(row[0]) if row and row[0] else {
+                "data": []
+            }
 
             return {
                 "success": True,
@@ -41,9 +46,11 @@ def execute_sp(procedure: str):
             "data": {}
         }
 
+
 @app.get("/commonget/{procedure}")
 def common_get(procedure: str):
     return execute_sp(procedure)
+
 
 if __name__ == "__main__":
     import uvicorn
