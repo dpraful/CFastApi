@@ -20,11 +20,13 @@ def common_post(body: dict = Body(...)):
 
     try:
 
+
         json_data = json.dumps(body)
 
         with get_connection() as conn:
 
             cursor = conn.cursor()
+
 
             cursor.execute(
                 """
@@ -39,6 +41,7 @@ def common_post(body: dict = Body(...)):
                 json_data
             )
 
+
             rows = cursor.fetchall()
 
             raw_json = "".join(
@@ -46,6 +49,7 @@ def common_post(body: dict = Body(...)):
                 for row in rows
                 if row and row[0] is not None
             )
+
 
             output_code = 0
 
@@ -56,11 +60,14 @@ def common_post(body: dict = Body(...)):
                 if output_row and output_row[0] is not None:
                     output_code = int(output_row[0])
 
+
             conn.commit()
+
 
             if raw_json:
 
                 try:
+
                     data = json.loads(raw_json)
 
                 except json.JSONDecodeError as e:
@@ -68,7 +75,10 @@ def common_post(body: dict = Body(...)):
                     return {
                         "success": False,
                         "httpstatus": 500,
-                        "message": f"Invalid JSON returned by stored procedure: {e}",
+                        "message": (
+                            "Invalid JSON returned by "
+                            f"stored procedure: {e}"
+                        ),
                         "data": {}
                     }
 
@@ -76,31 +86,48 @@ def common_post(body: dict = Body(...)):
 
                 data = {}
 
-            if output_code != 0:
+
+            if output_code < 0:
 
                 return {
                     "success": False,
                     "httpstatus": 500,
-                    "message": "Stored procedure returned an error.",
+                    "message": data.get(
+                        "message",
+                        "Stored procedure returned an error."
+                    ),
                     "data": data,
                     "outputcode": output_code
                 }
 
+
             return {
                 "success": True,
                 "httpstatus": 200,
-                "message": "SUCCESS",
+                "message": data.get(
+                    "message",
+                    "SUCCESS"
+                ),
                 "data": data
             }
 
+
     except pyodbc.Error as e:
+
+        message = (
+            e.args[1]
+            if len(e.args) > 1
+            else str(e)
+        )
 
         return {
             "success": False,
             "httpstatus": 500,
-            "message": str(e),
+            "message": message,
             "data": {}
         }
+
+
 
 if __name__ == "__main__":
 
